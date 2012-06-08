@@ -1,0 +1,49 @@
+Metadata-Version: 1.0
+Name: hsaudiotag
+Version: 1.1.1
+Summary: Read metdata (tags) of mp3, mp4, wma, ogg, flac and aiff files.
+Home-page: http://hg.hardcoded.net/hsaudiotag/
+Author: Hardcoded Software
+Author-email: hsoft@hardcoded.net
+License: BSD License
+Description: =====================================
+        hsaudiotag - Read audio file metadata
+        =====================================
+        
+        This is a Python 2 package. The Python 3 package is at http://pypi.python.org/pypi/hsaudiotag3k .
+        
+        ``hsaudiotag`` is a pure Python library that lets you read metadata (bitrate, sample rate, duration and tags) from mp3, mp4, wma, ogg, flac and aiff files. It can only read tags, not write to them, but unlike more complete libraries (like `Mutagen <http://code.google.com/p/quodlibet/wiki/Mutagen>`_), it is BSD licensed, making it suitable for most projects. It is also backed by a nifty test suite.
+        
+        The documentation has to be built with Sphinx. You can get Sphinx at http://sphinx.pocoo.org/
+        
+        Once you installed it, you can build the documentation with::
+        
+            sphinx-build docs docs_html
+        
+        The documentation is also available online at http://www.hardcoded.net/docs/hsaudiotag
+        
+        Changes
+        =======
+        
+        Version 1.1.1 -- 2011/02/14
+        ---------------------------
+        
+        * Ported changes from v1.0.0 up to 1.1.1 from Python 3 to Python 2, that is:
+        * Fixed crash on reading tag-less AIFF files.
+        * Fixed crash on mp4 files containing invalid utf-8 data.
+        * Added a wrapper class to automatically detect a file type.
+        * Invalid AIFF files now set their attributes nonetheless.
+        * Got rid of the ``hsutil`` dependency.
+        * Fixed a crash when reading mp4 files with malformed attribute atoms.
+        * Fixed a crash when reading mp4 files with out of range genre indexes.
+        
+        Version 1.0.0 -- 2010/07/11
+        ---------------------------
+        
+        * Initial Release
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Programming Language :: Python :: 2.6
+Classifier: Programming Language :: Python :: 2.7

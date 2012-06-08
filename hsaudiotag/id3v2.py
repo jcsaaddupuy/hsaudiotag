@@ -10,6 +10,8 @@ from __future__ import with_statement
 import io
 import struct
 import re
+# TODO remove when done
+import sys
 
 from .util import cond, tryint, FileOrPath
 from .genres import genre_by_index
@@ -38,6 +40,7 @@ def _read_id3_size(rawsize, syncsafe=True):
         return struct.unpack('!i', rawsize)[0]
 
 STRING_ENCODINGS = {0: u'iso-8859-1', 1: u'utf-16', 2: u'utf-16be', 3: u'utf-8'}
+IMAGE_ENCODINGS = {0: u'image/jpeg', 1: u'image/png'}
 
 def _read_id3_string(s, stringtype, nullreplace=u'\n'):
     encoding = STRING_ENCODINGS[stringtype]
@@ -134,9 +137,95 @@ class FrameDataComment(object):
     @property
     def text(self):
         return self.comment if self.comment else self.title
-    
+ 
+class FrameDataPicture(object):
+    # TODO Error checking all over
+    # TODO < v2.3 support
+    # TODO What happens when there are multiple pictures in the tag?
 
-FRAMEDATA_LIST = [FrameDataText, FrameDataComment]
+    def __init__(self, fp):
+        self._text = (u'', u'', u'', u'')
+
+        # Get text encoding
+        # TODO we should probably be using _read_id3_string() instead of fp.read() directly after this
+        text_encoding = fp.read(1)
+
+        # Get MIME Type
+        mime_type = ''
+        data = fp.read(1)
+        while data != '\x00':
+            mime_type += data
+            data = fp.read(1)
+
+        # Get picture type and type description
+        picture_type = fp.read(1)
+        picture_type_descriptions = [
+            "Other",
+            "32x32 pixels 'file icon' (PNG only)",
+            "Other File Icon",
+            "Cover (front)",
+            "Cover (back)",
+            "Leaflet page",
+            "Media (e.g. label side of CD)",
+            "Lead artist/lead performer/soloist",
+            "Artist/performer",
+            "Conductor",
+            "Band/Orchestra",
+            "Composer",
+            "Lyricist/text writer",
+            "Recording Location",
+            "During recording",
+            "During performance",
+            "Movie/video screen capture",
+            "A bright coloured fish",
+            "Illustration",
+            "Band/artist logotype",
+            "Publisher/Studio logotype"
+        ]
+        picture_text = picture_type_descriptions[int(picture_type.encode('hex'), 16)]
+
+        # Get description
+        description = ''
+        data = fp.read(1)
+        while data != '\x00':
+            description += data
+            data = fp.read(1)
+
+        # Get picture
+        picture = fp.read()
+
+        # Set Object
+        self._text = (mime_type, picture_text, description, picture)
+
+        # TESTING 
+        file_name = 'output.png'
+        with open(file_name, 'wb') as img:
+            print 'writing ' + str(sys.getsizeof(picture)) + ' byte ' + picture_text + ' picture to ' + file_name
+            img.write(picture)
+
+    @staticmethod
+    def supports(frameid):
+        # Only APIC (2.3 and higher) for now
+        return frameid.startswith(u'APIC')
+
+    @property
+    def mime_type(self):
+        return self._text[0]
+    
+    @property
+    def picture_type(self):
+        return self._text[1]
+
+    @property
+    def description(self):
+        return self._text[2]
+
+    @property
+    def picture(self):
+        return self._text[3]
+
+
+FRAMEDATA_LIST = [FrameDataText, FrameDataComment, FrameDataPicture]
 
 def _find_frame_data_class(frameid):
     for framedataclass in FRAMEDATA_LIST:
@@ -309,5 +398,25 @@ class Id3v2(object):
     @property
     def year(self):
         frame_id = cond(self.version >= 3, u'TYER', u'TYE')
+        return self._get_frame_text_line(frame_id)
+    
+    @property
+    def label(self):
+        frame_id = cond(self.version >= 3, u'TPUB', u'TPB')
+        return self._get_frame_text_line(frame_id)
+    
+    @property
+    def bpm(self):
+        frame_id = cond(self.version >= 3, u'TBPM', u'TBP')
+        return self._get_frame_text_line(frame_id)
+    
+    @property
+    def initial_key(self):
+        frame_id = cond(self.version >= 3, u'TKEY', u'TKE')
+        return self._get_frame_text_line(frame_id)
+    
+    @property
+    def picture(self):
+        frame_id = cond(self.version >= 3, u'APIC', u'PIC')
         return self._get_frame_text_line(frame_id)
     

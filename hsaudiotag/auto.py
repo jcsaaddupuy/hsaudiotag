@@ -25,7 +25,7 @@ EXT2CLASS = {
 }
 
 AUDIO_ATTRS = set([u'size', u'duration', u'bitrate', u'sample_rate', u'audio_offset', u'audio_size'])
-TAG_ATTRS = set([u'artist', u'album', u'title', u'genre', u'year', u'track', u'comment'])
+TAG_ATTRS = set([u'artist', u'album', u'title', u'genre', u'year', u'track', u'comment', u'label', u'bpm', u'initial_key',u'picture'])
 
 class File(object):
     u"""Automatically determine a file type and decode it accordingly, providing a unified interface

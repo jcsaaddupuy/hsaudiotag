@@ -1,3 +1,5 @@
+I'm currently in the process of adding additional fields to hsaudiotag, including artwork. You should treat this code as very very alpha for the time being. In the mean time, here is the original README:
+
 =====================================
 hsaudiotag - Read audio file metadata
 =====================================

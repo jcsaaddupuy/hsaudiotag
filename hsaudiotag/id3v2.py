@@ -197,12 +197,6 @@ class FrameDataPicture(object):
         # Set Object
         self._text = (mime_type, picture_text, description, picture)
 
-        # TESTING 
-        file_name = 'output.png'
-        with open(file_name, 'wb') as img:
-            print 'writing ' + str(sys.getsizeof(picture)) + ' byte ' + picture_text + ' picture to ' + file_name
-            img.write(picture)
-
     @staticmethod
     def supports(frameid):
         # Only APIC (2.3 and higher) for now
@@ -418,5 +412,6 @@ class Id3v2(object):
     @property
     def picture(self):
         frame_id = cond(self.version >= 3, u'APIC', u'PIC')
-        return self._get_frame_text_line(frame_id)
+        data = self._get_frame_data(frame_id)
+        return data.picture
     

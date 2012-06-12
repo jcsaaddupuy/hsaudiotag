@@ -413,5 +413,7 @@ class Id3v2(object):
     def picture(self):
         frame_id = cond(self.version >= 3, u'APIC', u'PIC')
         data = self._get_frame_data(frame_id)
-        return data.picture
+        if hasattr(data, 'picture'):
+            return data.picture
+        return None
     

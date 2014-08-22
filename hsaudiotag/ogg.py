@@ -59,7 +59,10 @@ class VorbisComment(object):
             [length] = unpack('<I',data[offset:offset+4])
             value = data[offset+4:offset+length+4]
             splitted = value.split('=')
-            meta_data[splitted[0]] = splitted[1]
+            # here, we will only have the first image
+            # if multiples METADATA_BLOCK_PICTURE are presents
+            if not meta_data.has_key(splitted[0]):
+                meta_data[splitted[0]] = splitted[1]
             offset += length + 4
         self.artist = get_field('ARTIST')
         self.album = get_field('ALBUM')
@@ -81,28 +84,36 @@ class VorbisComment(object):
 
     def _read_picture(self, strg):
 
+        if len(strg) == 0 :
+            # nothing to do here.
+            return None
+
+        # avoid base64 padding errors
         lens = len(strg)
         lenx = lens - (lens % 4 if lens % 4 else 4)
         strg=strg[:lenx]
         try:
-#            import ipdb; ipdb.set_trace()
-            offset = 8
+            # first thing first, decode the raw datas
             raw = base64.b64decode(strg)
 
-            _type, length = struct.unpack('>2I', raw[:offset])
+            # read the lenght for mime type
+            offset = 8
+            _, length = struct.unpack('>2I', raw[:offset])
+            # get the mimetype
             mime = raw[offset:offset+length].decode('UTF-8', 'replace')
             offset = offset + length
 
+            # read the length for description
             length, = struct.unpack('>I', raw[offset:offset+4])
             offset+=4
-
+            # read the description
             desc = raw[offset:offset+length].decode('UTF-8', 'replace')
             offset = offset + length
+            # infos about the thumbs
             (width, height, depth, colors, length) = struct.unpack('>5I', raw[offset:offset +20])
-
             offset+=20
 
-
+            # finnally, read the image content
             return raw[offset:]
         except Exception as e:
 

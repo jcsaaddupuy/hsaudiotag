@@ -292,7 +292,6 @@ class Id3v2(object):
                 if FLAG_EXT_HEADER & self.flags:
                     self._extheader = ExtHeader(data, self._header.vmajor)
                 self._read_frames(data)
-        import ipdb; ipdb.set_trace()
 
     #---Private
     def _decode_track(self, track):

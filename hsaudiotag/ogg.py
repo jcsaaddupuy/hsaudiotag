@@ -84,6 +84,11 @@ class VorbisComment(object):
 
     def _read_picture(self, strg):
 
+        if len(strg) == 0 :
+            # nothing to do here.
+            return None
+
+        # avoid base64 padding errors
         lens = len(strg)
         lenx = lens - (lens % 4 if lens % 4 else 4)
         strg=strg[:lenx]

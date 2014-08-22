@@ -2,8 +2,8 @@
 # Created On: 2005/12/16
 # Copyright 2010 Hardcoded Software (http://www.hardcoded.net)
 
-# This software is licensed under the "BSD" License as described in the "LICENSE" file, 
-# which should be included with this package. The terms are also available at 
+# This software is licensed under the "BSD" License as described in the "LICENSE" file,
+# which should be included with this package. The terms are also available at
 # http://www.hardcoded.net/licenses/bsd_license
 
 from __future__ import with_statement
@@ -32,22 +32,22 @@ class VorbisPage(object):
         page_size = sum(ord(segment) for segment in segments)
         self.size = page_size
         self.header_size = self.BASE_SIZE + segment_count
-    
+
     def next(self):
         self.fp.seek(self.start_offset + self.header_size + self.size)
         return VorbisPage(self.fp)
-    
+
     def read(self):
         self.fp.seek(self.start_offset + self.header_size)
         return self.fp.read(self.size)
-    
+
 
 class VorbisComment(object):
     def __init__(self, data):
         def get_field(field_name):
             data = meta_data.get(field_name, '')
             return unicode(data, u'utf-8')
-        
+
         [vendor_string_length] = unpack('<I', data[:4])
         meta_data_offset = vendor_string_length + 4
         [meta_count] = unpack('<I', data[meta_data_offset:meta_data_offset+4])
@@ -65,13 +65,15 @@ class VorbisComment(object):
         self.genre = get_field('GENRE')
         self.track = int(meta_data.get('TRACKNUMBER', 0))
         self.comment = get_field('COMMENT')
-        self.year = get_field('DATE')
-        if not self.year:
-            description = get_field('DESCRIPTION')
-            if u'YEAR: ' in description:
-                index = description.find(u'YEAR: ')
-                self.year = description[index+6:index+10]
-    
+        self.year = get_field('YEAR')
+        #self.date = get_field('DATE')
+
+        #if not self.year:
+        #    description = get_field('DESCRIPTION')
+        #    if u'YEAR: ' in description:
+        #        index = description.find(u'YEAR: ')
+        #        self.year = description[index+6:index+10]
+
 
 class Vorbis(object):
     def __init__(self, infile):
@@ -80,7 +82,7 @@ class Vorbis(object):
                 self._read(fp)
             except Exception: #The unpack error doesn't seem to have a class. I have to catch all here
                 self._empty()
-    
+
     def _empty(self):
         self.valid = False
         self.bitrate = 0
@@ -96,7 +98,7 @@ class Vorbis(object):
         self.duration = 0
         self.audio_offset = 0
         self.audio_size = 0
-    
+
     def _read(self, fp):
         fp.seek(0, 2)
         self.size = fp.tell()
@@ -107,13 +109,13 @@ class Vorbis(object):
             raise InvalidFileError()
         data = page.read()
         unpacked = unpack('<7sIB4I2B', data[:30])
-        (file_id, version, channel_mode, sample_rate, bitrate_max, bitrate_nominal, bitrate_max, 
+        (file_id, version, channel_mode, sample_rate, bitrate_max, bitrate_nominal, bitrate_max,
             block_size, stop_flag) = unpacked
         if file_id != '\x01vorbis':
             raise InvalidFileError()
         self.sample_rate = sample_rate
         self.bitrate = bitrate_nominal // 1000
-        
+
         #Read 2nd page
         page = page.next()
         if not page.valid:
@@ -129,14 +131,14 @@ class Vorbis(object):
         self.year = comment.year
         self.genre = comment.genre
         self.comment = comment.comment
-        
+
         #Get third page for audio_offset
         page = page.next()
         if not page.valid:
             raise InvalidFileError()
         self.audio_offset = page.start_offset
         self.audio_size = self.size - self.audio_offset
-        
+
         #Seek last page to get sample count. It's impossible to not have at least one page in
         #the last 64kb.
         fp.seek(-0x10000, 2)
@@ -150,4 +152,4 @@ class Vorbis(object):
         self.sample_count = page.position
         self.duration = self.sample_count // self.sample_rate
         self.valid = True
-    
+

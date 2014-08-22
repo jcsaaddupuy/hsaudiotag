@@ -8,6 +8,8 @@
 
 from __future__ import with_statement
 from struct import unpack
+import base64
+import struct
 
 from .util import FileOrPath
 
@@ -66,6 +68,9 @@ class VorbisComment(object):
         self.track = int(meta_data.get('TRACKNUMBER', 0))
         self.comment = get_field('COMMENT')
         self.year = get_field('YEAR')
+
+        self.picture = self._read_picture(get_field('METADATA_BLOCK_PICTURE'))
+
         #self.date = get_field('DATE')
 
         #if not self.year:
@@ -73,6 +78,36 @@ class VorbisComment(object):
         #    if u'YEAR: ' in description:
         #        index = description.find(u'YEAR: ')
         #        self.year = description[index+6:index+10]
+
+    def _read_picture(self, strg):
+
+        lens = len(strg)
+        lenx = lens - (lens % 4 if lens % 4 else 4)
+        strg=strg[:lenx]
+        try:
+#            import ipdb; ipdb.set_trace()
+            offset = 8
+            raw = base64.b64decode(strg)
+
+            _type, length = struct.unpack('>2I', raw[:offset])
+            mime = raw[offset:offset+length].decode('UTF-8', 'replace')
+            offset = offset + length
+
+            length, = struct.unpack('>I', raw[offset:offset+4])
+            offset+=4
+
+            desc = raw[offset:offset+length].decode('UTF-8', 'replace')
+            offset = offset + length
+            (width, height, depth, colors, length) = struct.unpack('>5I', raw[offset:offset +20])
+
+            offset+=20
+
+
+            return raw[offset:]
+        except Exception as e:
+
+            return None
+
 
 
 class Vorbis(object):
@@ -131,6 +166,7 @@ class Vorbis(object):
         self.year = comment.year
         self.genre = comment.genre
         self.comment = comment.comment
+        self.picture = comment.picture
 
         #Get third page for audio_offset
         page = page.next()

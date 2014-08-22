@@ -1,9 +1,9 @@
 # Created By: Virgil Dupras
 # Created On: 2010-12-28
 # Copyright 2010 Hardcoded Software (http://www.hardcoded.net)
-# 
-# This software is licensed under the "BSD" License as described in the "LICENSE" file, 
-# which should be included with this package. The terms are also available at 
+#
+# This software is licensed under the "BSD" License as described in the "LICENSE" file,
+# which should be included with this package. The terms are also available at
 # http://www.hardcoded.net/licenses/bsd_license
 
 import os.path as op
@@ -25,7 +25,8 @@ EXT2CLASS = {
 }
 
 AUDIO_ATTRS = set([u'size', u'duration', u'bitrate', u'sample_rate', u'audio_offset', u'audio_size'])
-TAG_ATTRS = set([u'artist', u'album', u'title', u'genre', u'year', u'track', u'comment', u'label', u'bpm', u'initial_key',u'picture'])
+TAG_ATTRS = set([u'artist', u'album', u'title', u'genre', u'year', u'track',
+u'comment', u'label', u'bpm', u'initial_key',u'picture', 'composer'])
 
 class File(object):
     u"""Automatically determine a file type and decode it accordingly, providing a unified interface
@@ -38,7 +39,7 @@ class File(object):
             self._set_attrs(f)
         if hasattr(f, u'close'):
             f.close()
-    
+
     @staticmethod
     def _guess_class(infile):
         if isinstance(infile, basestring):
@@ -54,17 +55,17 @@ class File(object):
                 return f
         else:
             return None
-    
+
     def _set_attrs(self, f):
         self.valid = True
         self.original = f
         for attrname in AUDIO_ATTRS:
-            setattr(self, attrname, getattr(f, attrname))
+            setattr(self, attrname, getattr(f, attrname, None))
         tag = f.tag if hasattr(f, u'tag') else f
         if tag is not None:
             for attrname in TAG_ATTRS:
-                setattr(self, attrname, getattr(tag, attrname))
-    
+                setattr(self, attrname, getattr(tag, attrname, None))
+
     def _set_invalid_attrs(self):
         self.valid = False
         self.original = None
@@ -73,4 +74,4 @@ class File(object):
         for attrname in TAG_ATTRS:
             default = u'' if attrname != u'track' else 0
             setattr(self, attrname, default)
-    
+

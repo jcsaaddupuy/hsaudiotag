@@ -2,8 +2,8 @@
 # Created On: 2004/12/09
 # Copyright 2010 Hardcoded Software (http://www.hardcoded.net)
 
-# This software is licensed under the "BSD" License as described in the "LICENSE" file, 
-# which should be included with this package. The terms are also available at 
+# This software is licensed under the "BSD" License as described in the "LICENSE" file,
+# which should be included with this package. The terms are also available at
 # http://www.hardcoded.net/licenses/bsd_license
 
 from __future__ import with_statement
@@ -86,11 +86,11 @@ class Header(object):
         self.tagsize = self.datasize + SIZE_HEADER
         if FLAG_FOOTER & self.hflags:
             self.tagsize += SIZE_FOOTER
-    
+
     @property
     def valid(self):
         return self.vmajor > 0
-    
+
 
 class ExtHeader(object):
     def __init__(self, fp, tagversion):
@@ -98,7 +98,7 @@ class ExtHeader(object):
         #is to skip the size of this header and advance the file descriptor for the rest of the read
         self.size = _read_id3_size(fp.read(4), tagversion > 3)
         self.data = fp.read(self.size - 4)
-    
+
 
 class FrameDataText(object):
     def __init__(self, fp):
@@ -106,11 +106,11 @@ class FrameDataText(object):
         stringtype = ord(fp.read(1)[0])
         if stringtype in STRING_ENCODINGS:
             self.text = _read_id3_string(fp.read(), stringtype)
-    
+
     @staticmethod
     def supports(frameid):
         return frameid.startswith(u'T')
-    
+
 
 class FrameDataComment(object):
     def __init__(self, fp):
@@ -121,23 +121,23 @@ class FrameDataComment(object):
             text = fp.read()
             text = _read_id3_string(text, stringtype, u'\0')
             self._text = tuple(text.split(u'\0'))
-    
+
     @staticmethod
     def supports(frameid):
         return frameid.startswith(u'COM')
-    
+
     @property
     def title(self):
         return self._text[0] if len(self._text) > 0 else u''
-    
+
     @property
     def comment(self):
         return self._text[1] if len(self._text) > 1 else u''
-    
+
     @property
     def text(self):
         return self.comment if self.comment else self.title
- 
+
 class FrameDataPicture(object):
     # TODO Error checking all over
     # TODO < v2.3 support
@@ -205,7 +205,7 @@ class FrameDataPicture(object):
     @property
     def mime_type(self):
         return self._text[0]
-    
+
     @property
     def picture_type(self):
         return self._text[1]
@@ -232,7 +232,7 @@ class Id3Frame(object):
         self.size = size
         self.rawdata = io.BytesIO(fp.read(size))
         self._data = None
-    
+
     @property
     def valid(self):
         if self.size == 0:
@@ -240,7 +240,7 @@ class Id3Frame(object):
         if not re_frame_type.match(self.frame_id):
             return False
         return True
-    
+
     @property
     def data(self):
         if self._data is None:
@@ -250,7 +250,7 @@ class Id3Frame(object):
             else:
                 raise NotImplementedError(u'Support for frame \'%s\' is not implemented yet' % self.frame_id)
         return self._data
-    
+
 
 class Id3v22Frame(Id3Frame):
     def __init__(self, fp):
@@ -267,6 +267,7 @@ class Id3v23Frame(Id3Frame):
 
 class Id3v2(object):
     def __init__(self, infile):
+
         self.position = POS_BEGIN
         self._extheader = None
         self.frames = None
@@ -291,7 +292,8 @@ class Id3v2(object):
                 if FLAG_EXT_HEADER & self.flags:
                     self._extheader = ExtHeader(data, self._header.vmajor)
                 self._read_frames(data)
-    
+        import ipdb; ipdb.set_trace()
+
     #---Private
     def _decode_track(self, track):
         #The track field can either contain a track number or a string in the
@@ -303,13 +305,13 @@ class Id3v2(object):
                 return self._decode_track(track.split(u'/')[0])
             else:
                 return 0
-    
+
     def _get_frame(self, fp):
         if self.version == 2:
             return Id3v22Frame(fp)
         else:
             return Id3v23Frame(fp, self.version > 3)
-    
+
     def _read_frames(self, fp):
         offset = fp.tell()
         self.frames = {}
@@ -322,51 +324,51 @@ class Id3v2(object):
             frame = self._get_frame(fp)
         if (self._last_read_frame is not None) and (self._last_read_frame.size > 0x7f) and \
             (not self._had_large_frame) and (self.version == 4):
-            #probably needs a itunes hack, in any case, this is the first large frame, 
+            #probably needs a itunes hack, in any case, this is the first large frame,
             #re-reading can't hurt.
             self._header.vmajor = 3
             fp.seek(offset)
             self._read_frames(fp)
-    
+
     def _get_frame_data(self, frame_id):
         if frame_id in self.frames:
             return self.frames[frame_id].data
-    
+
     def _get_frame_text(self, frame_id):
         result = self._get_frame_data(frame_id)
         return getattr(result, u'text', u'').strip()
-    
+
     def _get_frame_text_line(self, frame_id):
         result = self._get_frame_text(frame_id)
         return result.replace(u'\n', u' ').replace(u'\r', u' ')
-    
+
     #--- Properties
     size = property(lambda self: self._header.tagsize)
     data_size = property(lambda self: self._header.datasize)
     exists = property(lambda self: self._header.valid)
     flags = property(lambda self: self._header.hflags)
     version = property(lambda self: self._header.vmajor)
-    
+
     @property
     def album(self):
         frame_id = cond(self.version >= 3, u'TALB', u'TAL')
         return self._get_frame_text_line(frame_id)
-    
+
     @property
     def artist(self):
         frame_id = cond(self.version >= 3, u'TPE1', u'TP1')
         return self._get_frame_text_line(frame_id)
-    
+
     @property
     def comment(self):
         frame_id = cond(self.version >= 3, u'COMM', u'COM')
         return self._get_frame_text(frame_id)
-    
+
     @property
     def duration(self):
         s = self._get_frame_text(u'TLEN')
         return tryint(s) // 1000
-    
+
     @property
     def genre(self):
         frame_id = cond(self.version >= 3, u'TCON', u'TCO')
@@ -377,38 +379,38 @@ class Id3v2(object):
             return genre_by_index(index)
         else:
             return genre
-    
+
     @property
     def title(self):
         frame_id = cond(self.version >= 3, u'TIT2', u'TT2')
         return self._get_frame_text_line(frame_id)
-    
+
     @property
     def track(self):
         frame_id = cond(self.version >= 3, u'TRCK', u'TRK')
         s = self._get_frame_text_line(frame_id)
         return self._decode_track(s)
-    
+
     @property
     def year(self):
         frame_id = cond(self.version >= 3, u'TYER', u'TYE')
         return self._get_frame_text_line(frame_id)
-    
+
     @property
     def label(self):
         frame_id = cond(self.version >= 3, u'TPUB', u'TPB')
         return self._get_frame_text_line(frame_id)
-    
+
     @property
     def bpm(self):
         frame_id = cond(self.version >= 3, u'TBPM', u'TBP')
         return self._get_frame_text_line(frame_id)
-    
+
     @property
     def initial_key(self):
         frame_id = cond(self.version >= 3, u'TKEY', u'TKE')
         return self._get_frame_text_line(frame_id)
-    
+
     @property
     def picture(self):
         frame_id = cond(self.version >= 3, u'APIC', u'PIC')
@@ -416,4 +418,9 @@ class Id3v2(object):
         if hasattr(data, 'picture'):
             return data.picture
         return None
-    
+
+    @property
+    def composer(self):
+        frame_id = cond(self.version >= 3, u'TCOM', u'TCOM')
+        return self._get_frame_text_line(frame_id)
+

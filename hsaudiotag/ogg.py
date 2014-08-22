@@ -85,24 +85,27 @@ class VorbisComment(object):
         lenx = lens - (lens % 4 if lens % 4 else 4)
         strg=strg[:lenx]
         try:
-#            import ipdb; ipdb.set_trace()
-            offset = 8
+            # first thing first, decode the raw datas
             raw = base64.b64decode(strg)
 
-            _type, length = struct.unpack('>2I', raw[:offset])
+            # read the lenght for mime type
+            offset = 8
+            _, length = struct.unpack('>2I', raw[:offset])
+            # get the mimetype
             mime = raw[offset:offset+length].decode('UTF-8', 'replace')
             offset = offset + length
 
+            # read the length for description
             length, = struct.unpack('>I', raw[offset:offset+4])
             offset+=4
-
+            # read the description
             desc = raw[offset:offset+length].decode('UTF-8', 'replace')
             offset = offset + length
+            # infos about the thumbs
             (width, height, depth, colors, length) = struct.unpack('>5I', raw[offset:offset +20])
-
             offset+=20
 
-
+            # finnally, read the image content
             return raw[offset:]
         except Exception as e:
 

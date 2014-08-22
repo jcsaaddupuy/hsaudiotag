@@ -59,7 +59,10 @@ class VorbisComment(object):
             [length] = unpack('<I',data[offset:offset+4])
             value = data[offset+4:offset+length+4]
             splitted = value.split('=')
-            meta_data[splitted[0]] = splitted[1]
+            # here, we will only have the first image
+            # if multiples METADATA_BLOCK_PICTURE are presents
+            if not meta_data.has_key(splitted[0]):
+                meta_data[splitted[0]] = splitted[1]
             offset += length + 4
         self.artist = get_field('ARTIST')
         self.album = get_field('ALBUM')

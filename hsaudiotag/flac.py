@@ -163,7 +163,8 @@ class FLAC(object):
         if not self.picture:
             # could not read picture from ogg comment, try flac frame
             block_picture = self.get_first_block(PICTURE)
-            self.picture = block_picture.picture
+            if block_picture is not None:
+                self.picture = block_picture.picture
 
 
     def get_first_block(self, type):

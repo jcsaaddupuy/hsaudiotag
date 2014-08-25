@@ -393,6 +393,8 @@ class Id3v2(object):
     @property
     def year(self):
         frame_id = cond(self.version >= 3, u'TYER', u'TYE')
+        frame_id = cond(self.version >= 4, u'TDRC', frame_id)
+
         return self._get_frame_text_line(frame_id)
 
     @property

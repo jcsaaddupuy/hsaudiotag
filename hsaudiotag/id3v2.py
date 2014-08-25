@@ -16,6 +16,9 @@ import sys
 from .util import cond, tryint, FileOrPath
 from .genres import genre_by_index
 
+import logging
+logger = logging.getLogger(__name__)
+
 ID_ID3 = 'ID3'
 ID_3DI = '3DI'
 #The id3 flags are backwards
@@ -138,28 +141,8 @@ class FrameDataComment(object):
     def text(self):
         return self.comment if self.comment else self.title
 
-class FrameDataPicture(object):
-    # TODO Error checking all over
-    # TODO < v2.3 support
-    # TODO What happens when there are multiple pictures in the tag?
 
-    def __init__(self, fp):
-        self._text = (u'', u'', u'', u'')
-
-        # Get text encoding
-        # TODO we should probably be using _read_id3_string() instead of fp.read() directly after this
-        text_encoding = fp.read(1)
-
-        # Get MIME Type
-        mime_type = ''
-        data = fp.read(1)
-        while data != '\x00':
-            mime_type += data
-            data = fp.read(1)
-
-        # Get picture type and type description
-        picture_type = fp.read(1)
-        picture_type_descriptions = [
+PICTURE_TYPE_DESCRIPTION=[
             "Other",
             "32x32 pixels 'file icon' (PNG only)",
             "Other File Icon",
@@ -182,7 +165,33 @@ class FrameDataPicture(object):
             "Band/artist logotype",
             "Publisher/Studio logotype"
         ]
-        picture_text = picture_type_descriptions[int(picture_type.encode('hex'), 16)]
+
+class FrameDataPictureAPIC(object):
+    # TODO Error checking all over
+    # TODO < v2.3 support
+    # TODO What happens when there are multiple pictures in the tag?
+
+    def __init__(self, fp):
+
+        self._text = (u'', u'', u'', u'')
+
+        # Get text encoding
+        # TODO we should probably be using _read_id3_string() instead of fp.read() directly after this
+        text_encoding = fp.read(1)
+
+        # Get MIME Type
+        mime_type = ''
+        data = fp.read(1)
+        while data != '\x00':
+            mime_type += data
+            data = fp.read(1)
+
+        if mime_type not in ("image/png", "image/jpeg"):
+            return
+
+        # Get picture type and type description
+        picture_type = fp.read(1)
+        picture_text = PICTURE_TYPE_DESCRIPTION[int(picture_type.encode('hex'), 16)]
 
         # Get description
         description = ''
@@ -196,6 +205,7 @@ class FrameDataPicture(object):
 
         # Set Object
         self._text = (mime_type, picture_text, description, picture)
+
 
     @staticmethod
     def supports(frameid):
@@ -218,8 +228,103 @@ class FrameDataPicture(object):
     def picture(self):
         return self._text[3]
 
+class FrameDataPicturePIC(object):
+    # This is pretty hackish / experimental.
+    # The code is base on the code of the above FrameDataPictureAPIC
+    # (whichwas formerly named FrameDataPicture)
 
-FRAMEDATA_LIST = [FrameDataText, FrameDataComment, FrameDataPicture]
+    # Should Support < v2.3 ID3 PIC frame
+    # TODO Error checking all over
+    # TODO : support multiples pictures
+
+    def __init__(self, fp):
+        self._text = (u'', u'', u'', u'')
+        try:
+            self._read_pic_frame(fp)
+        except:
+            logger.exception("Something went very wrong while reading PIC frame")
+
+    def _read_pic_frame(self, fp):
+        # Get text encoding
+        # TODO we should probably be using _read_id3_string() instead of fp.read() directly after this
+        text_encoding = fp.read(1)
+
+        mime_type = ''
+        # Get MIME Type
+        data = fp.read(1)
+        while data != '\x00':
+            mime_type += data
+            data = fp.read(1)
+
+        if mime_type not in ("PNG", "JPEG"):
+            return
+
+        # Get picture type and type description
+        picture_type = fp.read(1)
+        picture_text = PICTURE_TYPE_DESCRIPTION[int(picture_type.encode('hex'), 16)]
+
+        # Get description
+        description = ''
+
+        data = fp.read(1)
+
+        # OK so here, description may be empty.
+        # In that case, we wont have a NULL separator
+        # but we will start to read directly the image data.
+
+        # We will watch for the value readed to see if it match
+        # PNG or JPEG (JFIF) header.
+
+        # This is uggly, and this solution is *ubber* uggly
+        # maybe we could only look for \x89 and \xff instead.
+        picture = ''
+        while data != '\x00':
+            description += data
+            if description in ("\x89PNG\r\n", "\xff\xd8\xff\xe0\x00\x10JFIF"):
+                # we did not get a description, but it's the png header starting
+                # It is not consistent with http://id3.org/id3v2-00 4.15
+                # the file seems to have been encoded by iTunes 11.0.2
+                picture = description
+                description = ''
+                break
+                # sorry.
+            data = fp.read(1)
+
+        # Get picture
+        picture += fp.read()
+
+        # Set Object
+        self._text = (mime_type, picture_text, description, picture)
+
+
+    @staticmethod
+    def supports(frameid):
+        # Only PIC ( < 2.3 )
+        return frameid.startswith(u'PIC')
+
+    @property
+    def mime_type(self):
+        return self._text[0]
+
+    @property
+    def picture_type(self):
+        return self._text[1]
+
+    @property
+    def description(self):
+        return self._text[2]
+
+    @property
+    def picture(self):
+        return self._text[3]
+
+
+FRAMEDATA_LIST = [
+        FrameDataText,
+        FrameDataComment,
+        FrameDataPictureAPIC,
+        FrameDataPicturePIC,
+        ]
 
 def _find_frame_data_class(frameid):
     for framedataclass in FRAMEDATA_LIST:
@@ -248,7 +353,8 @@ class Id3Frame(object):
             if framedataclass:
                 self._data = framedataclass(self.rawdata)
             else:
-                raise NotImplementedError(u'Support for frame \'%s\' is not implemented yet' % self.frame_id)
+                logger.warn("Could not read '%s' bloc", self.frame_id)
+                #raise NotImplementedError(u'Support for frame \'%s\' is not implemented yet' % self.frame_id)
         return self._data
 
 

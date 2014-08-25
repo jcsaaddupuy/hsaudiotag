@@ -277,21 +277,21 @@ class FrameDataPicturePIC(object):
 
         # This is uggly, and this solution is *ubber* uggly
         # maybe we could only look for \x89 and \xff instead.
-        picture = ''
         while data != '\x00':
             description += data
             if description in ("\x89PNG\r\n", "\xff\xd8\xff\xe0\x00\x10JFIF"):
                 # we did not get a description, but it's the png header starting
                 # It is not consistent with http://id3.org/id3v2-00 4.15
                 # the file seems to have been encoded by iTunes 11.0.2
-                picture = description
+                # be kind, rewind
+                fp.seek(fp.tell() - len(description))
                 description = ''
                 break
                 # sorry.
             data = fp.read(1)
 
         # Get picture
-        picture += fp.read()
+        picture = fp.read()
 
         # Set Object
         self._text = (mime_type, picture_text, description, picture)

@@ -2,8 +2,8 @@
 # Created On: 2005/12/17
 # Copyright 2010 Hardcoded Software (http://www.hardcoded.net)
 
-# This software is licensed under the "BSD" License as described in the "LICENSE" file, 
-# which should be included with this package. The terms are also available at 
+# This software is licensed under the "BSD" License as described in the "LICENSE" file,
+# which should be included with this package. The terms are also available at
 # http://www.hardcoded.net/licenses/bsd_license
 
 from __future__ import with_statement
@@ -48,7 +48,7 @@ class MetaDataBlockHeader(object):
 class MetaDataBlock(object):
     def __init__(self, infile, header):
         self.data = infile.read(header.size)
-    
+
 
 class StreamInfo(MetaDataBlock):
     def __init__(self, infile, header):
@@ -113,7 +113,7 @@ class FLAC(object):
                 self._read(fp)
             except Exception: #The unpack error doesn't seem to have a class. I have to catch all here
                 self._empty()
-    
+
     def _empty(self):
         self.valid = False
         self.bitrate = 0
@@ -153,6 +153,7 @@ class FLAC(object):
         self.year = comment.year
         self.genre = comment.genre
         self.comment = comment.comment
+        self.description = comment.description
         self.picture = comment.picture
 
         last = self.get_last_block()

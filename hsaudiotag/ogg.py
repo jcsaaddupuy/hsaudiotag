@@ -71,8 +71,12 @@ class VorbisComment(object):
         self.track = int(meta_data.get('TRACKNUMBER', 0))
         self.comment = get_field('COMMENT')
         self.year = get_field('YEAR')
+        self.description = get_field('DESCRIPTION')
+
 
         self.picture = self._read_picture(get_field('METADATA_BLOCK_PICTURE'))
+
+
 
         #self.date = get_field('DATE')
 
@@ -126,7 +130,7 @@ class Vorbis(object):
         with FileOrPath(infile, u'rb') as fp:
             try:
                 self._read(fp)
-            except Exception: #The unpack error doesn't seem to have a class. I have to catch all here
+            except Exception as e: #The unpack error doesn't seem to have a class. I have to catch all here
                 self._empty()
 
     def _empty(self):
@@ -138,6 +142,7 @@ class Vorbis(object):
         self.genre = u''
         self.year = u''
         self.comment = u''
+        self.description = u''
         self.track = 0
         self.sample_rate = 0
         self.sample_count = 0
@@ -177,6 +182,7 @@ class Vorbis(object):
         self.year = comment.year
         self.genre = comment.genre
         self.comment = comment.comment
+        self.description = comment.description
         self.picture = comment.picture
 
         #Get third page for audio_offset

@@ -385,6 +385,11 @@ class Id3v2(object):
         return self._get_frame_text_line(frame_id)
 
     @property
+    def description(self):
+        frame_id = cond(self.version >= 3, u'TIT3', u'TT3')
+        return self._get_frame_text_line(frame_id)
+
+    @property
     def track(self):
         frame_id = cond(self.version >= 3, u'TRCK', u'TRK')
         s = self._get_frame_text_line(frame_id)

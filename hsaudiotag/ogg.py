@@ -118,6 +118,20 @@ class VorbisComment(object):
             _, length = struct.unpack('>2I', raw[:offset])
             # get the mimetype
             mime = raw[offset:offset+length].decode('UTF-8', 'replace')
+
+            # The MIME type may also be --> to signify that the data part is a URL of the picture instead of
+            # the picture data itself.
+            # not suported (yet)
+            if mime == u'-->':
+                return None
+            # there is a nasty bug with OGG + PNG in Vorbis, images are cropped
+            # For some reason, the raw decoded data does not contains
+            # the full PNG image
+            # better safe than sorry, disabled
+            if mime == u'image/png':
+                logger.debug("Found unsupported png in OGG comment")
+                return None
+
             offset = offset + length
 
             # read the length for description

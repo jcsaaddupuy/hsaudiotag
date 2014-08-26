@@ -91,7 +91,7 @@ class Picture(MetaDataBlock):
         offset+=20
 
         # finnally, read the image content
-        return raw[offset:]
+        return raw[offset:offset+length]
 
 
 

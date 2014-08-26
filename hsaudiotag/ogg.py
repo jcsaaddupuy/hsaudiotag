@@ -61,30 +61,43 @@ class VorbisComment(object):
             splitted = value.split('=')
             # here, we will only have the first image
             # if multiples METADATA_BLOCK_PICTURE are presents
-            if not meta_data.has_key(splitted[0]):
-                meta_data[splitted[0]] = splitted[1]
+            key = splitted[0]
+            value = ''.join(splitted[1:])
+            if not meta_data.has_key(key):
+                meta_data[key] = value
             offset += length + 4
+
+
         self.artist = get_field('ARTIST')
         self.album = get_field('ALBUM')
         self.title = get_field('TITLE')
         self.genre = get_field('GENRE')
         self.track = int(meta_data.get('TRACKNUMBER', 0))
         self.comment = get_field('COMMENT')
-        self.year = get_field('YEAR')
         self.description = get_field('DESCRIPTION')
 
 
         self.picture = self._read_picture(get_field('METADATA_BLOCK_PICTURE'))
 
-
-
         #self.date = get_field('DATE')
-
-        #if not self.year:
+        # sometimes it is in non standard location
+        self.year = get_field('YEAR')
+        # if not found, will try standard DATE field
+        if not len(self.year or ''):
+            # From https://wiki.xiph.org/VorbisComment#Date_and_time
+            # The date format for any field describing a date must follow the
+            # ISO 8601 standard: YYYY-MM-DD, shortened to just YYYY-MM or simply
+            # YYYY.
+            date = get_field('DATE')
+            if date:
+                self.year = date.split("-")[0]
+        #if not len(self.year or ''):
         #    description = get_field('DESCRIPTION')
         #    if u'YEAR: ' in description:
         #        index = description.find(u'YEAR: ')
         #        self.year = description[index+6:index+10]
+
+
 
     def _read_picture(self, strg):
 

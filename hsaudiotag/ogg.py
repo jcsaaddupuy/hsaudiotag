@@ -35,6 +35,7 @@ class VorbisPage(object):
         self.size = page_size
         self.header_size = self.BASE_SIZE + segment_count
 
+
     def next(self):
         self.fp.seek(self.start_offset + self.header_size + self.size)
         return VorbisPage(self.fp)
@@ -46,6 +47,7 @@ class VorbisPage(object):
 
 class VorbisComment(object):
     def __init__(self, data):
+
         def get_field(field_name):
             data = meta_data.get(field_name, '')
             return unicode(data, u'utf-8')
@@ -110,6 +112,7 @@ class VorbisComment(object):
         lenx = lens - (lens % 4 if lens % 4 else 4)
         strg=strg[:lenx]
         try:
+
             # first thing first, decode the raw datas
             raw = base64.b64decode(strg)
 
@@ -145,7 +148,8 @@ class VorbisComment(object):
             offset+=20
 
             # finnally, read the image content
-            return raw[offset:]
+            return raw[offset:offset+length]
+
         except Exception as e:
 
             return None

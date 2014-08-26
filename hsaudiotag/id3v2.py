@@ -172,9 +172,14 @@ class FrameDataPictureAPIC(object):
     # TODO What happens when there are multiple pictures in the tag?
 
     def __init__(self, fp):
+        # (mime_type, picture_text, description, picture)
+        self._text = (u'', u'', u'', None)
+        try:
+            self._read_pic_frame(fp)
+        except:
+            logger.exception("Something went very wrong while reading picture frame")
 
-        self._text = (u'', u'', u'', u'')
-
+    def _read_pic_frame(self, fp):
         # Get text encoding
         # TODO we should probably be using _read_id3_string() instead of fp.read() directly after this
         text_encoding = fp.read(1)
@@ -228,7 +233,7 @@ class FrameDataPictureAPIC(object):
     def picture(self):
         return self._text[3]
 
-class FrameDataPicturePIC(object):
+class FrameDataPicturePIC(FrameDataPictureAPIC):
     # This is pretty hackish / experimental.
     # The code is base on the code of the above FrameDataPictureAPIC
     # (whichwas formerly named FrameDataPicture)
@@ -236,13 +241,6 @@ class FrameDataPicturePIC(object):
     # Should Support < v2.3 ID3 PIC frame
     # TODO Error checking all over
     # TODO : support multiples pictures
-
-    def __init__(self, fp):
-        self._text = (u'', u'', u'', u'')
-        try:
-            self._read_pic_frame(fp)
-        except:
-            logger.exception("Something went very wrong while reading PIC frame")
 
     def _read_pic_frame(self, fp):
         # Get text encoding
@@ -281,8 +279,7 @@ class FrameDataPicturePIC(object):
             description += data
             if description in ("\x89PNG\r\n", "\xff\xd8\xff\xe0\x00\x10JFIF"):
                 # we did not get a description, but it's the png header starting
-                # It is not consistent with http://id3.org/id3v2-00 4.15
-                # the file seems to have been encoded by iTunes 11.0.2
+                # See http://id3.org/id3v2-00 4.15
                 # be kind, rewind
                 fp.seek(fp.tell() - len(description))
                 description = ''
@@ -301,22 +298,6 @@ class FrameDataPicturePIC(object):
     def supports(frameid):
         # Only PIC ( < 2.3 )
         return frameid.startswith(u'PIC')
-
-    @property
-    def mime_type(self):
-        return self._text[0]
-
-    @property
-    def picture_type(self):
-        return self._text[1]
-
-    @property
-    def description(self):
-        return self._text[2]
-
-    @property
-    def picture(self):
-        return self._text[3]
 
 
 FRAMEDATA_LIST = [

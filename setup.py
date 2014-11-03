@@ -11,9 +11,9 @@ CLASSIFIERS = [
 LONG_DESC = open('README', 'rt').read() + '\n\n' + open('CHANGES', 'rt').read()
 
 setup(
-    name='hsaudiotag',
-    version='1.1.1',
-    author='Hardcoded Software',
+    name='lima-hsaudiotag',
+    version='1.2.0',
+    author='Hardcoded Software, Meetlima',
     author_email='hsoft@hardcoded.net',
     packages=['hsaudiotag'],
     scripts=[],
